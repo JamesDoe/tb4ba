@@ -30,12 +30,9 @@
     const BOY_SPEED = 0.1;
     const PIXIE_SPEED = BOY_SPEED * 0.8;
     const GLOW_DISTANCE = BOY_SIZE * 2;
-    const TURBULENCE_FACTOR = 10;
+    const TURBULENCE_FACTOR = 0.005;
     const HOLD_DISTANCE = BOY_SIZE;
     const LAUNCH_FORCE_MULTIPLIER = 0.05;
-
-// Variables
-let blinkInterval = null;
 
     // Keyboard input handling
     const Key = {
@@ -120,57 +117,9 @@ if (1) {
 
       // Move pixie
       if (isDraggingPixie) {
-   const boyToPixie = new THREE.Vector3().subVectors(pixie.position, boy.position);
-  const holdPosition = new THREE.Vector3().addVectors(boy.position, boyToPixie.normalize().multiplyScalar(HOLD_DISTANCE));
-  pixie.position.lerp(holdPosition, 0.1);
-
-  const escapeForce = new THREE.Vector3(
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    0
-  );
-  pixie.position.add(escapeForce);
-
-  const maxEscapeDistance = HOLD_DISTANCE * 2;
-  const escapeDistance = pixie.position.distanceTo(boy.position) - HOLD_DISTANCE;
-  if (escapeDistance > maxEscapeDistance) {
-    const boyToPixieNormalized = boyToPixie.normalize();
-    const pullBackForce = boyToPixieNormalized.multiplyScalar((escapeDistance - maxEscapeDistance) * 0.1);
-    pixie.position.add(pullBackForce);
-  }
-} else {
-  const turbulence = new THREE.Vector3(
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    0
-  );
-  pixie.position.add(turbulence);
-   // Reset escape behavior if the boy is moving again
-  if (boyMovement.lengthSq() > 0) {
-    escapeDistance = 0;
-  }
-} else {
-  const turbulence = new THREE.Vector3(
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    Math.random() * TURBULENCE_FACTOR - TURBULENCE_FACTOR / 2,
-    0
-  );
-  pixie.position.add(turbulence);
-
-  const maxEscapeDistance = BOY_SIZE / 2;
-  const escapeDirection = new THREE.Vector3().subVectors(pixie.position, boy.position);
-  let escapeDistance = escapeDirection.length();
-
-  if (escapeDistance > maxEscapeDistance) {
-    const pullBackForce = escapeDirection.normalize().multiplyScalar(escapeDistance - maxEscapeDistance);
-    pixie.position.add(pullBackForce);
-  } else if (escapeDistance === 0) {
-    escapeDistance = maxEscapeDistance / 2; // Initial attempt to pull away
-    const escapeForce = escapeDirection.normalize().multiplyScalar(escapeDistance);
-    pixie.position.add(escapeForce);
-  }
-
-
+        const boyToPixie = new THREE.Vector3().subVectors(pixie.position, boy.position);
+        const holdPosition = new THREE.Vector3().addVectors(boy.position, boyToPixie.normalize().multiplyScalar(HOLD_DISTANCE));
+        pixie.position.lerp(holdPosition, 0.1);
       } else {
         const pixieMovement = new THREE.Vector3(
           Math.sin(Date.now() * 0.002) * PIXIE_SPEED,
@@ -203,15 +152,13 @@ if (1) {
 
     function onMouseDown() {
       if (pixie.material.color.getHex() === 0xffff00) {
-    isDraggingPixie = true;
-    startBlinking();
-  }
+        isDraggingPixie = true;
+      }
     }
 
     function onMouseUp() {
       if (isDraggingPixie) {
         isDraggingPixie = false;
-stopBlinking();
         const launchDirection = new THREE.Vector3(
           -(pixie.position.x - boy.position.x),
           -(pixie.position.y - boy.position.y),
@@ -233,25 +180,6 @@ stopBlinking();
 
     window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
     window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
-
-function startBlinking() {
-  let isYellow = true;
-  blinkInterval = setInterval(() => {
-    if (isYellow) {
-      pixie.material.color.setHex(0x00ffff); // Set to blue
-    } else {
-      pixie.material.color.setHex(0xffff00); // Set to yellow
-    }
-    isYellow = !isYellow;
-  }, 500); // Blink interval: 500ms (change as desired)
-}
-
-function stopBlinking() {
-  if (blinkInterval !== null) {
-    clearInterval(blinkInterval);
-    blinkInterval = null;
-  }
-}
   </script>
 </body>
 </html>
