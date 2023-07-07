@@ -60,7 +60,7 @@
     };
 
     // Variables
-    let scene, camera, renderer, boy, pixie, isDraggingPixie, launchForce;
+    let scene, camera, renderer, boy, pixie, isDraggingPixie, launchForce, isGlowing;
 
     init();
     animate();
@@ -163,26 +163,30 @@ if (1) {
       // Check distance for glowing
       const distance = boy.position.distanceTo(pixie.position);
       if (distance <= GLOW_DISTANCE) {
-        pixie.material.color.setHex(0xffff00);
+        if(!isDraggingPixie){
+pixie.material.color.setHex(0xffff00);
+};
+isGlowing = 1;
       } else {
-        pixie.material.color.setHex(0xff0000);
+pixie.material.color.setHex(0xff0000);
+isGlowing = 0;
       }
-
       // Render scene
       renderer.render(scene, camera);
     }
 
     function onMouseDown() {
-      if (pixie.material.color.getHex() === 0xffff00) {
+      if (isGlowing) {
         isDraggingPixie = true;
-	startBlinking();
+pixie.material.color.setHex(0x0000ff);
+      // Render scene
+      renderer.render(scene, camera);
       }
     }
 
     function onMouseUp() {
       if (isDraggingPixie) {
         isDraggingPixie = false;
-	stopBlinking();
         const launchDirection = new THREE.Vector3(
           -(pixie.position.x - boy.position.x),
           -(pixie.position.y - boy.position.y),
