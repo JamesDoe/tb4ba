@@ -1,104 +1,185 @@
-<! DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Montserrat" rel="stylesheet">
-<style>
-body {
-font-family:"Source Sans Pro";
-font-size:16px;
-font-weight: 400;
-line-height: 24px;
-letter-spacing: 0.5px;
-}
-button {
-border: 0;
-border-radius: 40px;
-font-family:"Montserrat";
-font-size:14px;
-font-weight: 500;
-height: 40px;
-line-height: 20px;
-letter-spacing: 0.1px;
-margin: 8px;
-min-width: 20px;
-padding: 0 24px 0 24px;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TB4BA: Release Your Demons Demo</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
 
-h2 {
-font-family:"Montserrat";
-font-size: 32px;
-font-weight: 400;
-line-height: 40px;
-letter-spacing: 0;
-}
-</style>
+    #game-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 </head>
 <body>
-<div>
-<header>
-<h2>
-Discover the power of community.
-</h2>
-<h3>
-Take the first step towards realizing that together, we are stronger
-</h3>
-<button>
-Reveal your inner Teddy
-</button>
-<p>
-Vulnerability is strength
-</p>
-</header>
-<p>
-Has there ever been a time when you felt like a square peg in a round hole? Do you ever wonder if there's more to life than just going through the motions? We hear you. Sometimes, it feels like society wants clones, not individuals. 
-</p>
+  <div id="game-container"></div>
 
-<h2>But here's the thing</h2>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+  <script>
+    // Constants
+    const PLANE_SIZE = 10;
+    const HALF_PLANE_SIZE = PLANE_SIZE / 2;
+    const BOY_SIZE = 1;
+    const PIXIE_SIZE = BOY_SIZE / 5;
+    const BOY_SPEED = 0.1;
+    const PIXIE_SPEED = BOY_SPEED * 0.8;
+    const GLOW_DISTANCE = BOY_SIZE * 2;
+    const TURBULENCE_FACTOR = 0.005;
+    const HOLD_DISTANCE = BOY_SIZE;
+    const LAUNCH_FORCE_MULTIPLIER = 0.05;
 
-<p>
-It doesn't have to be that way. The Community Den is a place where you can be your most authentic self, without fear of judgment or ridicule. Sometimes when you get real with others about your mental health - stimga shows up, but we don't do that around here, because this is a compassionate community, not just for some — but for all, and you can help us spread the awareness just by continuing to read this messsage. 
+    // Keyboard input handling
+    const Key = {
+      _pressed: {},
 
-<h2>Reading on is like giving your teddy bear a warm hug — it just feels right.</h2>
+      LEFT: 37,
+      UP: 38,
+      RIGHT: 39,
+      DOWN: 40,
 
-After discovering the Three Core Principles, you'll go on to find the Teddy Bear's special care instructions. These two short projects are just the beginning of a roadmap that's aimed at demanding that your life be a happier, healthier, and more fulfilling experience.
-</p>
+      isDown: function(keyCode) {
+        return this._pressed[keyCode];
+      },
 
-<h2>Where's Your Teddy?</h2>
+      onKeydown: function(event) {
+        this._pressed[event.keyCode] = true;
+      },
 
-<p>
-See, when you take care of a Teddy, you're really taking care of yourself. And we believe that when you take care of yourself, you're also taking care of the community. THAT'S why we're so passionate about what we do! We've seen firsthand the negative impact that countercultural movements can have on mental well-being. 
+      onKeyup: function(event) {
+        delete this._pressed[event.keyCode];
+      }
+    };
 
-So let's just talk about how the core principles, and taking care of your Teddy, can help you be your most authentic self, and also make TB4BA a better community.
-</p>
+    // Variables
+    let scene, camera, renderer, boy, pixie, isDraggingPixie, launchForce;
 
-<p>
-If you're ready to embrace your own special way of being, and join a community that values YOUR style just as much as you do, then click that button and let's get started!
-</p>
-</div>
-<div>
-<button>
-I want to see the 3 Principles
-</button>
-</div>
-<breadcrumbs>
-<breadcrumb>P1: Pay attention to yourself</breadcrumb>
-<breadcrumb>P2: Talk it out</breadcrumb>
-<breadcrumb></breadcrumb>
-</breadcrumbs>
-<h2>TB4BA Priniciple One - Unleash your inner Teddy Bear: pay attention to yourself</h2>
-We all get caught up in the hustle and bustle of life, but we gotta remember to make time everyday to do exercises that strengthen mental health. Who else is going to do that for us? Whether it's taking a 60-second break to quiet our minds at work, or prioritizing self-care instead of a weekend full of commitments — even small efforts can make a big difference. Look, at the end of the day YOU are the ONLY one that can take charge of this mental health journey. Think about it — of all the BILLIONS of people on this planet, it's only you that knows the real deal. It really is only YOU that knows yourself best. So take the time to check in with yourself regularly, and take opportunities sometimes to just treat yourself like you would treat a teddy bear that you really love - because when you do that, it benefits us all!
+    init();
+    animate();
 
-<h2>TB4BA Priniciple Two - Talk it out (even with the grizzlies)</h2>
-Talking to others is key to maintaining good mental health. Studies show that having people around us who support us, like good friends, can help protect us from anxiety, depression, and post-traumatic stress. By connecting with others, we can share our experiences and get support from those who might be going through similar problems. Sometimes, having a supportive community can make all the difference in getting through the day.
+    function init() {
+      // Scene
+      scene = new THREE.Scene();
 
-And just to be real, we know that things can't always be rainbows and gumdrops all the time! So, when it comes to mental health, it's both — support AND honesty — that we really need everyday; even though dealing with unresolved emotions, difficult people or annoying situations can be tough, and not all conflicts are healthy. It's important to put your mental health first and set boundaries. Communicate honestly and have tough conversations, while also being kind and gentle with yourself. Just like friends and Teddy Bears who help us through hard times, you should be the first person to make an attempt to take care of yourself sometimes.
-<div>
+      // Camera
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 15;
 
-</div>
+      // Renderer
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('game-container').appendChild(renderer.domElement);
+
+      // Boy
+      const boyGeometry = new THREE.BoxGeometry(BOY_SIZE, BOY_SIZE, BOY_SIZE);
+      const boyMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      boy = new THREE.Mesh(boyGeometry, boyMaterial);
+      scene.add(boy);
+
+      // Pixie
+      const pixieGeometry = new THREE.BoxGeometry(PIXIE_SIZE, PIXIE_SIZE, PIXIE_SIZE);
+      const pixieMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      pixie = new THREE.Mesh(pixieGeometry, pixieMaterial);
+      scene.add(pixie);
+
+      // Mouse events
+      document.addEventListener('mousedown', onMouseDown);
+      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('mousemove', onMouseMove);
+
+      // Resize event
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Move boy
+      const boyMovement = new THREE.Vector3();
+      // if (!isDraggingPixie) {
+if (1) {
+        if (Key.isDown(Key.LEFT) && boy.position.x - BOY_SPEED >= -HALF_PLANE_SIZE)
+          boyMovement.x -= BOY_SPEED;
+        if (Key.isDown(Key.RIGHT) && boy.position.x + BOY_SPEED <= HALF_PLANE_SIZE)
+          boyMovement.x += BOY_SPEED;
+        if (Key.isDown(Key.UP) && boy.position.y + BOY_SPEED <= HALF_PLANE_SIZE)
+          boyMovement.y += BOY_SPEED;
+        if (Key.isDown(Key.DOWN) && boy.position.y - BOY_SPEED >= -HALF_PLANE_SIZE)
+          boyMovement.y -= BOY_SPEED;
+
+        boy.position.add(boyMovement);
+      }
+
+      // Move pixie
+      if (isDraggingPixie) {
+        const boyToPixie = new THREE.Vector3().subVectors(pixie.position, boy.position);
+        const holdPosition = new THREE.Vector3().addVectors(boy.position, boyToPixie.normalize().multiplyScalar(HOLD_DISTANCE));
+        pixie.position.lerp(holdPosition, 0.1);
+      } else {
+        const pixieMovement = new THREE.Vector3(
+          Math.sin(Date.now() * 0.002) * PIXIE_SPEED,
+          Math.cos(Date.now() * 0.002) * PIXIE_SPEED,
+          0
+        );
+        pixie.position.add(pixieMovement);
+      }
+
+      // Apply launch force
+      if (launchForce) {
+        pixie.position.add(launchForce);
+        launchForce.multiplyScalar(0.98);
+        if (launchForce.lengthSq() < 0.01) {
+          launchForce = null;
+        }
+      }
+
+      // Check distance for glowing
+      const distance = boy.position.distanceTo(pixie.position);
+      if (distance <= GLOW_DISTANCE) {
+        pixie.material.color.setHex(0xffff00);
+      } else {
+        pixie.material.color.setHex(0xff0000);
+      }
+
+      // Render scene
+      renderer.render(scene, camera);
+    }
+
+    function onMouseDown() {
+      if (pixie.material.color.getHex() === 0xffff00) {
+        isDraggingPixie = true;
+      }
+    }
+
+    function onMouseUp() {
+      if (isDraggingPixie) {
+        isDraggingPixie = false;
+        const launchDirection = new THREE.Vector3(
+          -(pixie.position.x - boy.position.x),
+          -(pixie.position.y - boy.position.y),
+          0
+        ).normalize();
+        launchForce = launchDirection.multiplyScalar(launchDirection.length() * LAUNCH_FORCE_MULTIPLIER);
+      }
+    }
+
+    function onMouseMove(event) {
+      // Unused for winding up
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
+    window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
+  </script>
 </body>
 </html>
-
-
-
