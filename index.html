@@ -22,6 +22,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
   <script>
+	// Variables
+	let pixieMovement = new THREE.Vector3(), blinkInterval = null;
+
     // Constants
     const PLANE_SIZE = 10;
     const HALF_PLANE_SIZE = PLANE_SIZE / 2;
@@ -75,6 +78,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.getElementById('game-container').appendChild(renderer.domElement);
 
+const planeGeometry = new THREE.PlaneGeometry(PLANE_SIZE, PLANE_SIZE);
+const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+scene.add(plane);
+
       // Boy
       const boyGeometry = new THREE.BoxGeometry(BOY_SIZE, BOY_SIZE, BOY_SIZE);
       const boyMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
@@ -83,7 +91,9 @@
 
       // Pixie
       const pixieGeometry = new THREE.BoxGeometry(PIXIE_SIZE, PIXIE_SIZE, PIXIE_SIZE);
-      const pixieMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      var pixieMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+//pixieMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
       pixie = new THREE.Mesh(pixieGeometry, pixieMaterial);
       scene.add(pixie);
 
@@ -120,8 +130,20 @@ if (1) {
         const boyToPixie = new THREE.Vector3().subVectors(pixie.position, boy.position);
         const holdPosition = new THREE.Vector3().addVectors(boy.position, boyToPixie.normalize().multiplyScalar(HOLD_DISTANCE));
         pixie.position.lerp(holdPosition, 0.1);
+  const distance = boy.position.distanceTo(pixie.position);
+  if (distance > GLOW_DISTANCE && boyMovement.lengthSq() > pixieMovement.lengthSq()) {
+    isDraggingPixie = false;
+    const releaseForce = boyMovement.clone().multiplyScalar(2);
+    pixie.position.add(releaseForce);
+
+    // Reset pixie color and position after release
+    setTimeout(() => {
+      pixie.material.color.setHex(0xff0000);
+      pixie.position.copy(boy.position);
+    }, 2000);
+  }
       } else {
-        const pixieMovement = new THREE.Vector3(
+        pixieMovement = new THREE.Vector3(
           Math.sin(Date.now() * 0.002) * PIXIE_SPEED,
           Math.cos(Date.now() * 0.002) * PIXIE_SPEED,
           0
@@ -153,12 +175,14 @@ if (1) {
     function onMouseDown() {
       if (pixie.material.color.getHex() === 0xffff00) {
         isDraggingPixie = true;
+	startBlinking();
       }
     }
 
     function onMouseUp() {
       if (isDraggingPixie) {
         isDraggingPixie = false;
+	stopBlinking();
         const launchDirection = new THREE.Vector3(
           -(pixie.position.x - boy.position.x),
           -(pixie.position.y - boy.position.y),
@@ -177,6 +201,31 @@ if (1) {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
+
+function startBlinking() {
+  let isYellow = true;
+  blinkInterval = setInterval(() => {
+console.log('blinking');
+    if (isYellow) {
+console.log('blue');
+pixie.material.color.setHex(0x0000ff);
+//      pixie.material.color.setHex(0x00ffff); // Set to blue
+	console.log(pixie.material.color);
+  isYellow = !isYellow;
+    } else {
+console.log(pixie.material.color);
+      pixie.material.color.setHex(0xffffff); // Set to yellow
+    }
+  
+  }, 500); // Blink interval: 500ms (change as desired)
+}
+
+function stopBlinking() {
+  if (blinkInterval !== null) {
+    clearInterval(blinkInterval);
+    blinkInterval = null;
+  }
+}
 
     window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
     window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
